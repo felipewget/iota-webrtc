@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox-sw.js");
 
 importScripts(
-  "/iota-webrtc/precache-manifest.a9f9d15202ff235b11fd8595dd3dc1ce.js"
+  "/iota-webrtc/precache-manifest.1880bc1bbe4e3a9daa584da23e6255e8.js"
 );
 
 self.addEventListener('message', (event) => {

@@ -1,10 +1,10 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "f1045d14344db86d84b6ad692ae504dd",
+    "revision": "d3c0cb4c341739cc58cb31d94ff0072e",
     "url": "/iota-webrtc/index.html"
   },
   {
-    "revision": "d6bcaee679079c4924c4",
+    "revision": "b8612724bf1fa8520db5",
     "url": "/iota-webrtc/static/css/main.1aa3d6f3.chunk.css"
   },
   {
@@ -12,8 +12,8 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/iota-webrtc/static/js/2.e4267fb7.chunk.js"
   },
   {
-    "revision": "d6bcaee679079c4924c4",
-    "url": "/iota-webrtc/static/js/main.4b92f160.chunk.js"
+    "revision": "b8612724bf1fa8520db5",
+    "url": "/iota-webrtc/static/js/main.8ac61d7f.chunk.js"
   },
   {
     "revision": "cd47db25d74cac55021c",
