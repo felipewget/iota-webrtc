@@ -1,0 +1,65 @@
+{
+  "name": "iota-webrtc",
+  "version": "0.1.0",
+  "private": true,
+  "homepage": "http://gitname.github.io/iota-webrtc",
+  "dependencies": {
+    "@iota/account": "^1.0.0-beta.20",
+    "@iota/converter": "^1.0.0-beta.19",
+    "@iota/core": "^1.0.0-beta.17",
+    "@iota/extract-json": "^1.0.0-beta.16",
+    "@iota/validators": "^1.0.0-beta.21",
+    "@material-ui/core": "^4.3.2",
+    "@material-ui/icons": "^4.2.1",
+    "base64-arraybuffer": "^0.2.0",
+    "core-js": "^3.1.4",
+    "crypto-js": "^3.1.9-1",
+    "debounce": "^1.2.0",
+    "events": "^3.0.0",
+    "lokijs": "^1.5.7",
+    "lzutf8": "^0.5.5",
+    "react": "^16.8.6",
+    "react-dom": "^16.8.6",
+    "react-epic-spinners": "^0.3.0",
+    "react-helmet": "^5.2.1",
+    "react-router-dom": "^5.0.1",
+    "react-scripts": "3.0.1",
+    "reactn": "^2.1.7",
+    "regenerator-runtime": "^0.13.2",
+    "simple-peer": "^9.4.0",
+    "uuid": "^3.3.2"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-class-properties": "^7.5.5",
+    "eslint": "^5.16.0",
+    "eslint-config-airbnb": "^17.1.0",
+    "eslint-plugin-import": "^2.18.0",
+    "eslint-plugin-jsx-a11y": "^6.2.3",
+    "eslint-plugin-react": "^7.14.2",
+    "eslint-plugin-react-hooks": "^1.6.1",
+    "gh-pages": "^2.1.1"
+  }
+}
