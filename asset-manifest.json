@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/iota-webrtc/static/css/main.1aa3d6f3.chunk.css",
+    "main.js": "/iota-webrtc/static/js/main.53611d1e.chunk.js",
+    "main.js.map": "/iota-webrtc/static/js/main.53611d1e.chunk.js.map",
+    "runtime~main.js": "/iota-webrtc/static/js/runtime~main.92e6413a.js",
+    "runtime~main.js.map": "/iota-webrtc/static/js/runtime~main.92e6413a.js.map",
+    "static/js/2.0f98251b.chunk.js": "/iota-webrtc/static/js/2.0f98251b.chunk.js",
+    "static/js/2.0f98251b.chunk.js.map": "/iota-webrtc/static/js/2.0f98251b.chunk.js.map",
+    "index.html": "/iota-webrtc/index.html",
+    "precache-manifest.79ee846b760702874092b205830c7063.js": "/iota-webrtc/precache-manifest.79ee846b760702874092b205830c7063.js",
+    "service-worker.js": "/iota-webrtc/service-worker.js",
+    "static/css/main.1aa3d6f3.chunk.css.map": "/iota-webrtc/static/css/main.1aa3d6f3.chunk.css.map"
+  }
+}
