@@ -77,6 +77,7 @@ export default function Chatroom({ match: { params: { roomId } } }) {
 
   return (
     <div>
+      <div>{`Room ID: ${roomId}`}</div>
       <button type="button" onClick={sendMessage}>Send a message</button>
       <button type="button" onClick={stopMonitoring}>Stop monitoring</button>
       <button type="button" onClick={endMonitoring}>End Peer connection</button>
