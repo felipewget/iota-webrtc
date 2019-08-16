@@ -99,8 +99,11 @@ export default function Chatroom({ match: { params: { roomId } }, history }) {
       setStreams(prevState => prevState.filter(stream => stream.id !== peer.id));
       setPeerCounter(prevState => prevState - 1);
     });
-
+    window.onbeforeunload = function () {
+      communication.endMonitoring();
+    };
     return () => {
+      window.onbeforeunload = undefined;
       communication.endMonitoring();
     };
   }, []);

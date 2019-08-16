@@ -1,7 +1,7 @@
 import React, {
   useGlobal, useEffect, getGlobal, setGlobal, useState,
 } from 'reactn';
-import { TAG_LENGTH } from 'utils/constants';
+import { TAG_LENGTH, SEED_LENGTH } from 'utils/constants';
 import { generateTrytes } from 'utils';
 import { initialState } from 'store';
 import { isTrytes } from '@iota/validators';
@@ -55,7 +55,7 @@ export default function Account({ history }) {
 
     account.generateCDA({
       timeoutAt: Date.now() + 24 * 60 * 60 * 1000,
-    }).then(res => setFaucetAddr(res.address.substr(0, 81)));
+    }).then(res => setFaucetAddr(res.address.substr(0, SEED_LENGTH)));
 
     addAccountEventHandlers(account);
     return () => {
@@ -72,12 +72,12 @@ export default function Account({ history }) {
   }
 
   function createChatroom() {
-    const newRoomId = generateTrytes(81);
+    const newRoomId = generateTrytes(TAG_LENGTH);
     history.push(`chatroom/${newRoomId}`);
   }
 
   function joinChatroom() {
-    if (isTrytes(roomId, 81)) {
+    if (isTrytes(roomId, TAG_LENGTH)) {
       history.push(`chatroom/${roomId}`);
     }
   }

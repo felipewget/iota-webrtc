@@ -64,7 +64,6 @@ export default class Communication extends Events {
   }
 
   sendDonationOffer = (peerId) => {
-    console.log('commu send donation');
     const message = {
       type: this.type.DONATE_OFFER,
     };
@@ -79,7 +78,7 @@ export default class Communication extends Events {
     }
   }
 
-  broadcastRequest = async () => {
+  broadcastRequest = () => {
     const request = {
       id: this.myId,
       username: this.myUsername,
@@ -109,7 +108,7 @@ export default class Communication extends Events {
   }
 
   getNewTransactions = async () => {
-    const searchValues = { addresses: [this.roomId] };
+    const searchValues = { tags: [this.roomId] };
     const transactions = await this.iota.findTransactionObjects(searchValues);
     return transactions.filter((transaction) => {
       const { timestamp, bundle } = transaction;
@@ -137,23 +136,28 @@ export default class Communication extends Events {
         .sort((a, b) => (a.currentIndex > b.currentIndex ? 1 : -1)));
   }
 
-  getSignals = bundles => bundles.map(bundle => extractData(bundle))
-    .filter(({ type, id }) => !(type === this.type.REQUEST && id === this.myId))
+  getSignals = bundles => bundles.reduce((signals, bundle) => {
+    const extractedSignal = extractData(bundle);
+    const { type, id } = extractedSignal;
+    if (!(type === this.type.REQUEST && id === this.myId)) {
+      signals.push(extractedSignal);
+    }
+    return signals;
+  }, [])
 
-  startOffering = (signal) => {
-    this.requestList[signal.id] = signal;
-    for (const id in this.requestList) {
-      if (!this.peerList[id]) {
-        const { username } = this.requestList[id];
-        const { stream, config } = this;
-        const peer = this.createPeer({
-          initiator: true,
-          stream,
-          id,
-          config,
-        });
-        this.attachEventHandlers(peer, id, username);
-      }
+  // getSignals = bundles => bundles.map(bundle => extractData(bundle))
+  //   .filter(({ type, id }) => !(type === this.type.REQUEST && id === this.myId))
+
+  startOffering = ({ id, username }) => {
+    if (!this.peerList[id]) {
+      const { stream, config } = this;
+      const peer = this.createPeer({
+        initiator: true,
+        stream,
+        id,
+        config,
+      });
+      this.attachEventHandlers(peer, id, username);
     }
   }
 
@@ -189,7 +193,7 @@ export default class Communication extends Events {
           this.startAnswering(id, peerId, username, data);
           break;
         default:
-          console.log('Unknown signal type');
+          console.log('Unknown signal');
       }
     }
   }
@@ -262,9 +266,6 @@ export default class Communication extends Events {
             expectedAmount,
             value: 1,
           })
-            .then((trytes) => {
-              console.log('Successfully prepared the transaction:', trytes);
-            })
             .catch((err) => {
               console.log(err);
             });
@@ -276,12 +277,11 @@ export default class Communication extends Events {
     });
 
     peer.on('stream', (stream) => {
-      console.log('stream');
-      console.log(identity);
       this.emit('stream', { ...identity, srcObject: stream });
     });
 
     peer.on('track', (track, stream) => {
+      console.log('track');
       this.emit('track', { ...identity, track, stream });
     });
 
@@ -290,23 +290,24 @@ export default class Communication extends Events {
     });
 
     peer.on('close', () => {
-      console.log('closed');
+      console.log('close');
       this.emit('close', identity);
       peer.destroy();
       delete this.peerList[id];
-      delete this.requestList[id];
     });
 
     peer.on('error', (error) => {
+      console.log('error');
       // this.emit('error', { ...identity, error });
-      console.log(error);
     });
   }
 
   stopStreaming = () => {
-    const trackList = this.stream.getTracks();
-    for (const track of trackList) {
-      track.stop();
+    if (this.stream) {
+      const trackList = this.stream.getTracks();
+      for (const track of trackList) {
+        track.stop();
+      }
     }
   }
 
@@ -321,6 +322,5 @@ export default class Communication extends Events {
       this.peerList[id].destroy();
     }
     this.peerList = {};
-    this.requestList = {};
   }
 }
