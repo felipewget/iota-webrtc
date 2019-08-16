@@ -7,6 +7,8 @@ import { initialState } from 'store';
 import { isTrytes } from '@iota/validators';
 import { createAccount } from '@iota/account';
 import { createPersistenceAdapter } from '@iota/persistence-adapter-level';
+import { composeAPI } from '@iota/core';
+import { debounce } from 'debounce';
 
 const addAccountEventHandlers = () => {};
 
@@ -20,23 +22,43 @@ export default function Account({ history }) {
   const [myBalance, setMyBalance] = useState('myBalance');
 
   useEffect(() => {
+    const iota = composeAPI({
+      provider,
+    });
+    iota.getAccountData(seed).then(res => console.log(res));
     const account = createAccount({
       seed,
       provider,
       persistencePath: `${username}`,
       persistenceAdapter: createPersistenceAdapter,
     });
-    account.getAvailableBalance().then(res => setMyBalance(res));
-
-    account.on('includedDeposit', ({ address, bundle }) => {
-      account.getAvailableBalance().then(res => setMyBalance(res));
+    account.getAvailableBalance().then(balance => setMyBalance(balance));
+    account.startAttaching({
+      depth: 3,
+      minWeightMagnitude: 9,
+      delay: 5000,
+      maxDepth: 6,
     });
 
+    account.on('includedDeposit', debounce(async ({ address, bundle }) => {
+      console.log('Incoming payment confirmed');
+      const newBalance = await account.getTotalBalance();
+      setMyBalance(newBalance);
+    }), 1000);
+
+    account.on('includedWithdrawal', debounce(async ({ address, bundle }) => {
+      console.log('Outgoing payment confirmed');
+      const newBalance = await account.getTotalBalance();
+      setMyBalance(newBalance);
+    }), 1000);
+
+    account.generateCDA({
+      timeoutAt: Date.now() + 24 * 60 * 60 * 1000,
+    }).then(res => console.log(res.address.substr(0, 81)));
+
     addAccountEventHandlers(account);
-    account.start();
-    account.getAvailableBalance().then(balance => setMyBalance(balance));
     return () => {
-      account.stop();
+      account.stopAttaching();
       account.removeAllListeners();
     };
   }, []);
@@ -49,12 +71,12 @@ export default function Account({ history }) {
   }
 
   function createChatroom() {
-    const newRoomId = generateTrytes(TAG_LENGTH);
+    const newRoomId = generateTrytes(81);
     history.push(`chatroom/${newRoomId}`);
   }
 
   function joinChatroom() {
-    if (isTrytes(roomId, TAG_LENGTH)) {
+    if (isTrytes(roomId, 81)) {
       history.push(`chatroom/${roomId}`);
     }
   }

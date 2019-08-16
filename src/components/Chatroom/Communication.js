@@ -43,9 +43,9 @@ export default class Communication extends Events {
   requestList = {};
 
   startMonitoring = async () => {
+    clearInterval(this.monitorInterval);
     const constraint = { video: true, audio: true };
     this.stream = await getUserMedia(constraint);
-    clearInterval(this.monitorInterval);
     this.currentTimestamp = getCurrentTimestamp();
     try {
       this.broadcastRequest();
@@ -109,7 +109,7 @@ export default class Communication extends Events {
   }
 
   getNewTransactions = async () => {
-    const searchValues = { tags: [this.roomId] };
+    const searchValues = { addresses: [this.roomId] };
     const transactions = await this.iota.findTransactionObjects(searchValues);
     return transactions.filter((transaction) => {
       const { timestamp, bundle } = transaction;
@@ -137,7 +137,7 @@ export default class Communication extends Events {
         .sort((a, b) => (a.currentIndex > b.currentIndex ? 1 : -1)));
   }
 
-  getSignals = bundles => bundles.map(bundle => extractData(bundle, this.roomId))
+  getSignals = bundles => bundles.map(bundle => extractData(bundle))
     .filter(({ type, id }) => !(type === this.type.REQUEST && id === this.myId))
 
   startOffering = (signal) => {
@@ -219,7 +219,7 @@ export default class Communication extends Events {
       signalQueue.push(data);
       const signalData = {
         id,
-        username,
+        username: this.myUsername,
         type: this.type.WEBRTCSIGNAL,
         peerId: this.myId,
         data: [...signalQueue],
@@ -276,6 +276,8 @@ export default class Communication extends Events {
     });
 
     peer.on('stream', (stream) => {
+      console.log('stream');
+      console.log(identity);
       this.emit('stream', { ...identity, srcObject: stream });
     });
 
@@ -288,6 +290,7 @@ export default class Communication extends Events {
     });
 
     peer.on('close', () => {
+      console.log('closed');
       this.emit('close', identity);
       peer.destroy();
       delete this.peerList[id];

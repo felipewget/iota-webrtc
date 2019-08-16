@@ -32,7 +32,7 @@ export default function Peer(props) {
         className="peer__donate"
         onClick={sendDonationOffer}
       >
-        Send message
+        Send 1 iota token
       </button>
     </div>
   );

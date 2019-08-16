@@ -59,12 +59,13 @@ export const extractData = (bundle) => {
   return JSON.parse(decompressData(dataJSON));
 };
 
-export const prepareData = (data, tag) => {
+export const prepareData = (data, roomId) => {
   const compressedData = compressData(JSON.stringify(data));
   const message = asciiToTrytes(JSON.stringify(compressedData));
   return [{
-    address: generateTrytes(SEED_LENGTH),
-    tag,
+    address: roomId,
+    // address: generateTrytes(SEED_LENGTH),
+    // tag,
     value: 0,
     message,
   }];

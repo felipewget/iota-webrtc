@@ -5,6 +5,7 @@ import { generateTrytes, getUserMedia } from 'utils';
 import { DEFAULT_INTERVAL } from 'utils/constants';
 import { createAccount } from '@iota/account';
 import { createPersistenceAdapter } from '@iota/persistence-adapter-level';
+import { debounce } from 'debounce';
 import Communication from './Communication';
 import Peer from './Peer';
 
@@ -58,28 +59,26 @@ export default function Chatroom({ match: { params: { roomId } }, history }) {
       persistencePath: `${username}`,
       persistenceAdapter: createPersistenceAdapter,
     });
-    account.getAvailableBalance().then(res => setMyBalance(res));
+    account.getTotalBalance().then(balance => setMyBalance(balance));
 
-    account.on('includedDeposit', ({ address, bundle }) => {
-      console.log('Received a new payment');
-      account.getAvailableBalance().then(res => setMyBalance(res));
-    });
+    account.on('includedDeposit', debounce(async ({ address, bundle }) => {
+      console.log('Incoming payment confirmed');
+      const newBalance = await account.getTotalBalance();
+      setMyBalance(newBalance);
+    }), 1000);
 
-    account.on('pendingDeposit', ({ address, bundle }) => {
-      console.log('Receiving a new payment');
-      console.log('Address:', address, 'Tail transaction hash:', bundle[0].hash);
-    });
-
-    account.on('pendingWithdrawal', ({ address, bundle }) => {
-      console.log('Outgoing payment is pending');
-      console.log('Address:', address, 'Tail transaction hash:', bundle[0].hash);
-    });
-
-    account.on('includedWithdrawal', ({ address, bundle }) => {
+    account.on('includedWithdrawal', debounce(async ({ address, bundle }) => {
       console.log('Outgoing payment confirmed');
-      account.getAvailableBalance().then(res => setMyBalance(res));
-    });
+      const newBalance = await account.getTotalBalance();
+      setMyBalance(newBalance);
+    }), 1000);
 
+    account.startAttaching({
+      depth: 3,
+      minWeightMagnitude: 9,
+      delay: 5000,
+      maxDepth: 6,
+    });
 
     /* eslint-disable-next-line no-shadow */
     const communication = new Communication({ ...config, account });
