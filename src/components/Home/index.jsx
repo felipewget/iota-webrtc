@@ -20,6 +20,7 @@ export default function Account({ history }) {
   const [, setLoggedIn] = useGlobal('loggedIn');
   const [roomId, setRoomId] = useState('');
   const [myBalance, setMyBalance] = useState('myBalance');
+  const [faucetAddr, setFaucetAddr] = useState('faucetAddr');
 
   useEffect(() => {
     const iota = composeAPI({
@@ -54,7 +55,7 @@ export default function Account({ history }) {
 
     account.generateCDA({
       timeoutAt: Date.now() + 24 * 60 * 60 * 1000,
-    }).then(res => console.log(res.address.substr(0, 81)));
+    }).then(res => setFaucetAddr(res.address.substr(0, 81)));
 
     addAccountEventHandlers(account);
     return () => {
@@ -88,6 +89,18 @@ export default function Account({ history }) {
       </div>
       <div>
         {`My balance: ${myBalance}`}
+      </div>
+      <div>
+        {`Use this address to request for devnet tokens: ${faucetAddr}`}
+      </div>
+      <div>
+        <a
+          target="_blank"
+          href="https://faucet.devnet.iota.org"
+          rel="noopener noreferrer"
+        >
+      Open devnet faucet link in new tab
+        </a>
       </div>
       <button type="button" onClick={createChatroom}>
         Create chatroom
