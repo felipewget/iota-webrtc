@@ -1,25 +1,44 @@
 import React, {
   useGlobal, useEffect, getGlobal, setGlobal, useState,
 } from 'reactn';
-import { composeAPI } from '@iota/core';
-import { TangleNet, TAG_LENGTH } from 'utils/constants';
+import { TAG_LENGTH } from 'utils/constants';
 import { generateTrytes } from 'utils';
 import { initialState } from 'store';
 import { isTrytes } from '@iota/validators';
+import { createAccount } from '@iota/account';
+import { createPersistenceAdapter } from '@iota/persistence-adapter-level';
+
+const addAccountEventHandlers = () => {};
 
 export default function Account({ history }) {
   const [seed] = useGlobal('seed');
-  const [accountData, setAccountData] = useGlobal('accountData');
+  const [provider] = useGlobal('provider');
+  const [username] = useGlobal('username');
+  // const [myAccount, setMyAccount] = useGlobal('myAccount');
   const [, setLoggedIn] = useGlobal('loggedIn');
   const [roomId, setRoomId] = useState('');
+  const [myBalance, setMyBalance] = useState('myBalance');
+
   useEffect(() => {
-    const iota = composeAPI({
-      provider: TangleNet.DEV_NET1.URL,
+    const account = createAccount({
+      seed,
+      provider,
+      persistencePath: `${username}`,
+      persistenceAdapter: createPersistenceAdapter,
     });
-    iota.getAccountData(seed).then((res) => {
-      console.log(res);
-      setAccountData(res);
+    account.getAvailableBalance().then(res => setMyBalance(res));
+
+    account.on('includedDeposit', ({ address, bundle }) => {
+      account.getAvailableBalance().then(res => setMyBalance(res));
     });
+
+    addAccountEventHandlers(account);
+    account.start();
+    account.getAvailableBalance().then(balance => setMyBalance(balance));
+    return () => {
+      account.stop();
+      account.removeAllListeners();
+    };
   }, []);
 
   function logout() {
@@ -43,10 +62,10 @@ export default function Account({ history }) {
   return (
     <div>
       <div>
-        {`Your seed: ${seed}`}
+        {`My seed: ${seed}`}
       </div>
       <div>
-        {`Your account data: ${accountData}`}
+        {`My balance: ${myBalance}`}
       </div>
       <button type="button" onClick={createChatroom}>
         Create chatroom

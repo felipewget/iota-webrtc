@@ -5,7 +5,7 @@ export const TRYTES_CHARSET_REGEX = /[^A-Z9]+/g;
 export const SEED_LENGTH = 81;
 export const TAG_LENGTH = 27;
 export const MAX_DEPTH = 4;
-export const DEFAULT_INTERVAL = 2000;
+export const DEFAULT_INTERVAL = 3000;
 export const ICE_SERVERS = [{
   urls: 'stun:global.stun.twilio.com:3478?transport=udp',
 }, {

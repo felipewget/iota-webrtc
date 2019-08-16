@@ -10,10 +10,12 @@ import {
 import { MAX_DEPTH } from 'utils/constants';
 import { debounce } from 'debounce';
 import { composeAPI } from '@iota/core';
+import { serializeCDAMagnet, parseCDAMagnet } from '@iota/cda';
+
 
 export default class Communication extends Events {
   constructor({
-    seed, username, myId, roomId, minWeight, iceServers, interval, provider,
+    seed, username, myId, roomId, minWeight, iceServers, interval, provider, account,
   }) {
     super();
     this.seed = seed;
@@ -25,11 +27,15 @@ export default class Communication extends Events {
     this.interval = interval;
     this.config = { iceServers };
     this.iota = composeAPI({ provider });
+    this.account = account;
   }
 
-  static Type = {
+  type = {
     WEBRTCSIGNAL: 'WEBRTCSIGNAL',
     REQUEST: 'REQUEST',
+    DONATE_OFFER: 'DONATE_OFFER',
+    DONATE_ACCEPT: 'DONATE_ACCEPT',
+    CHAT_MESSAGE: 'CHAT_MESSAGE',
   }
   peerList = {};
   monitorInterval = null;
@@ -50,11 +56,34 @@ export default class Communication extends Events {
     }
   }
 
+  sendMessage(peerId, message) {
+    const peer = this.peerList[peerId];
+    if (peer && peer.connected) {
+      peer.send(message);
+    }
+  }
+
+  sendDonationOffer = (peerId) => {
+    console.log('commu send donation');
+    const message = {
+      type: this.type.DONATE_OFFER,
+    };
+    this.sendMessage(peerId, JSON.stringify(message));
+  }
+
+  broadcastMessage(message) {
+    for (const peerId of Object.keys(this.peerList)) {
+      if (this.peerList[peerId].connected) {
+        this.peerList[peerId].send(message);
+      }
+    }
+  }
+
   broadcastRequest = async () => {
     const request = {
       id: this.myId,
       username: this.myUsername,
-      type: Communication.Type.REQUEST,
+      type: this.type.REQUEST,
     };
     this.broadcastTransaction(request);
   }
@@ -109,7 +138,7 @@ export default class Communication extends Events {
   }
 
   getSignals = bundles => bundles.map(bundle => extractData(bundle, this.roomId))
-    .filter(({ type, id }) => !(type === Communication.Type.REQUEST && id === this.myId))
+    .filter(({ type, id }) => !(type === this.type.REQUEST && id === this.myId))
 
   startOffering = (signal) => {
     this.requestList[signal.id] = signal;
@@ -153,22 +182,14 @@ export default class Communication extends Events {
         type, id, peerId, username, data,
       } = signal;
       switch (type) {
-        case Communication.Type.REQUEST:
+        case this.type.REQUEST:
           this.startOffering(signal);
           break;
-        case Communication.Type.WEBRTCSIGNAL:
+        case this.type.WEBRTCSIGNAL:
           this.startAnswering(id, peerId, username, data);
           break;
         default:
           console.log('Unknown signal type');
-      }
-    }
-  }
-
-  broadcastMessage(message) {
-    for (const peerId of Object.keys(this.peerList)) {
-      if (this.peerList[peerId].connected) {
-        this.peerList[peerId].send(message);
       }
     }
   }
@@ -199,7 +220,7 @@ export default class Communication extends Events {
       const signalData = {
         id,
         username,
-        type: Communication.Type.WEBRTCSIGNAL,
+        type: this.type.WEBRTCSIGNAL,
         peerId: this.myId,
         data: [...signalQueue],
       };
@@ -208,12 +229,54 @@ export default class Communication extends Events {
       this.emit('signal', { ...identity, signalQueue });
     });
 
-    peer.on('data', (data) => {
+    peer.on('data', async (data) => {
+      let message = data.toString();
+      message = JSON.parse(message);
+      switch (message.type) {
+        case this.type.CHAT_MESSAGE: {
+          this.emit('chatmessage', { ...identity, message });
+          break;
+        }
+        case this.type.DONATE_OFFER: {
+          const cda = await this.account.generateCDA({
+            timeoutAt: Date.now() + 24 * 60 * 60 * 1000,
+            expectedAmount: 1,
+          });
+          const magnetLink = serializeCDAMagnet(cda);
+          const response = {
+            type: this.type.DONATE_ACCEPT,
+            data: magnetLink,
+          };
+          peer.send(JSON.stringify(response));
+          break;
+        }
+        case this.type.DONATE_ACCEPT: {
+          const CDAdata = parseCDAMagnet(message.data);
+          const {
+            address, timeoutAt, multiUse, expectedAmount,
+          } = CDAdata;
+          this.account.sendToCDA({
+            address,
+            timeoutAt,
+            multiUse,
+            expectedAmount,
+            value: 1,
+          })
+            .then((trytes) => {
+              console.log('Successfully prepared the transaction:', trytes);
+            })
+            .catch((err) => {
+              console.log(err);
+            });
+          break;
+        }
+        default:
+      }
       this.emit('data', { ...identity, data: data.toString() });
     });
 
     peer.on('stream', (stream) => {
-      this.emit('stream', { ...identity, stream });
+      this.emit('stream', { ...identity, srcObject: stream });
     });
 
     peer.on('track', (track, stream) => {
@@ -237,11 +300,19 @@ export default class Communication extends Events {
     });
   }
 
+  stopStreaming = () => {
+    const trackList = this.stream.getTracks();
+    for (const track of trackList) {
+      track.stop();
+    }
+  }
+
   stopMonitoring = () => {
     clearInterval(this.monitorInterval);
   }
 
-  endMonitoring() {
+  endMonitoring = () => {
+    this.stopStreaming();
     clearInterval(this.monitorInterval);
     for (const id of Object.keys(this.peerList)) {
       this.peerList[id].destroy();

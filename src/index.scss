@@ -1,0 +1,20 @@
+/* Normalize CSS file */
+@import-normalize;
+
+.peer {
+    display: flex;
+    flex-direction: row nowrap;
+    &__video {
+        width: 300px;
+        height: 300px;
+    }
+    &__donate {
+        width: 100px;
+        height: 100px;
+        margin: 20px;
+    }
+    &__username {
+        position: absolute;
+        margin-left: 30px;
+    }
+}

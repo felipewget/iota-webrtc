@@ -1,6 +1,6 @@
 import React, { setGlobal, getGlobal } from 'reactn';
 import ReactDOM from 'react-dom';
-import './index.css';
+import './index.scss';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
@@ -8,7 +8,9 @@ import { HashRouter as Router } from 'react-router-dom';
 import App from 'components/App';
 import Loki from 'lokijs';
 import LokiIDBAdapter from 'lokijs/src/loki-indexed-adapter';
+import * as Iota from '@iota/core';
 import { initialState, DBContext } from './store';
+
 
 const userData = localStorage.getItem('userData');
 if (userData) {
@@ -42,6 +44,11 @@ const loki = new Loki('test.db', {
   /* eslint-disable-next-line */
   autoloadCallback,
 });
+
+
+/* debugging */
+window.iota = Iota;
+
 
 const MOUNT_NODE = document.getElementById('root');
 

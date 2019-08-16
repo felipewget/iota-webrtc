@@ -10,7 +10,10 @@ export const initialState = {
   tangleNet: TangleNet.DEV_NET1,
   iceServers: ICE_SERVERS,
   accountData: null,
-  monitoringInterval: 2000,
+  monitoringInterval: 3000,
+  myAccount: null,
+  provider: TangleNet.DEV_NET1.URL,
+  myBalance: 0,
 };
 
 export const DBContext = React.createContext();
