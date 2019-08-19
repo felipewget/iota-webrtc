@@ -22,8 +22,8 @@ export default function Chatroom({ match: { params: { roomId } }, history }) {
   const [streams, setStreams] = useState([]);
   const [peerCounter, setPeerCounter] = useState(0);
   const [communication, setCommunication] = useState(null);
-  const [myBalance, setMyBalance] = useState('myBalance');
-
+  const [availableBalance, setAvailableBalance] = useState(0);
+  const [totalBalance, setTotalBalance] = useState(0);
   const config = {
     username,
     seed,
@@ -52,6 +52,15 @@ export default function Chatroom({ match: { params: { roomId } }, history }) {
 
   const startMonitoring = () => communication.startMonitoring();
 
+  const updateBalance = debounce((account) => {
+    account.getTotalBalance().then((res) => {
+      setTotalBalance(res);
+    });
+    account.getAvailableBalance().then((res) => {
+      setAvailableBalance(res);
+    });
+  }, 1000);
+
   useEffect(() => {
     const account = createAccount({
       seed,
@@ -59,19 +68,28 @@ export default function Chatroom({ match: { params: { roomId } }, history }) {
       persistencePath: `${username}`,
       persistenceAdapter: createPersistenceAdapter,
     });
-    account.getTotalBalance().then(balance => setMyBalance(balance));
 
-    account.on('includedDeposit', debounce(async ({ address, bundle }) => {
+    account.on('pendingDeposit', ({ address, bundle }) => {
+      console.log('Incoming payment is pending');
+      updateBalance(account);
+    });
+
+    account.on('pendingWithdrawal', ({ address, bundle }) => {
+      console.log('Outgoing payment is pending');
+      updateBalance(account);
+    });
+
+    account.on('includedDeposit', ({ address, bundle }) => {
       console.log('Incoming payment confirmed');
-      const newBalance = await account.getTotalBalance();
-      setMyBalance(newBalance);
-    }), 1000);
+      updateBalance(account);
+    });
 
-    account.on('includedWithdrawal', debounce(async ({ address, bundle }) => {
+    account.on('includedWithdrawal', ({ address, bundle }) => {
       console.log('Outgoing payment confirmed');
-      const newBalance = await account.getTotalBalance();
-      setMyBalance(newBalance);
-    }), 1000);
+      updateBalance(account);
+    });
+
+    updateBalance(account);
 
     account.startAttaching({
       depth: 3,
@@ -110,7 +128,8 @@ export default function Chatroom({ match: { params: { roomId } }, history }) {
 
   return (
     <div>
-      <div>{`My Balance: ${myBalance}`}</div>
+      <div>{`My Available Balance: ${availableBalance}`}</div>
+      <div>{`My Total Balance: ${totalBalance}`}</div>
       <div>{`Room ID: ${roomId}`}</div>
       <button type="button" onClick={returnHome}>Return home</button>
       <button type="button" onClick={stopMonitoring}>Stop monitoring</button>

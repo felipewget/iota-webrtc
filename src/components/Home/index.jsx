@@ -19,8 +19,19 @@ export default function Account({ history }) {
   // const [myAccount, setMyAccount] = useGlobal('myAccount');
   const [, setLoggedIn] = useGlobal('loggedIn');
   const [roomId, setRoomId] = useState('');
-  const [myBalance, setMyBalance] = useState('myBalance');
+  const [availableBalance, setAvailableBalance] = useState(0);
+  const [totalBalance, setTotalBalance] = useState(0);
   const [faucetAddr, setFaucetAddr] = useState('faucetAddr');
+
+  const updateBalance = debounce((account) => {
+    account.getTotalBalance().then((res) => {
+      setTotalBalance(res);
+    });
+    account.getAvailableBalance().then((res) => {
+      setAvailableBalance(res);
+    });
+  }, 1000);
+
 
   useEffect(() => {
     const iota = composeAPI({
@@ -33,7 +44,7 @@ export default function Account({ history }) {
       persistencePath: `${username}`,
       persistenceAdapter: createPersistenceAdapter,
     });
-    account.getAvailableBalance().then(balance => setMyBalance(balance));
+    updateBalance(account);
     account.startAttaching({
       depth: 3,
       minWeightMagnitude: 9,
@@ -41,21 +52,29 @@ export default function Account({ history }) {
       maxDepth: 6,
     });
 
-    account.on('includedDeposit', debounce(async ({ address, bundle }) => {
-      console.log('Incoming payment confirmed');
-      const newBalance = await account.getTotalBalance();
-      setMyBalance(newBalance);
-    }), 1000);
+    account.on('pendingDeposit', ({ address, bundle }) => {
+      console.log('Incoming payment is pending');
+      updateBalance(account);
+    });
 
-    account.on('includedWithdrawal', debounce(async ({ address, bundle }) => {
+    account.on('pendingWithdrawal', ({ address, bundle }) => {
+      console.log('Outgoing payment is pending');
+      updateBalance(account);
+    });
+
+    account.on('includedDeposit', ({ address, bundle }) => {
+      console.log('Incoming payment confirmed');
+      updateBalance(account);
+    });
+
+    account.on('includedWithdrawal', ({ address, bundle }) => {
       console.log('Outgoing payment confirmed');
-      const newBalance = await account.getTotalBalance();
-      setMyBalance(newBalance);
-    }), 1000);
+      updateBalance(account);
+    });
 
     account.generateCDA({
       timeoutAt: Date.now() + 24 * 60 * 60 * 1000,
-    }).then(res => setFaucetAddr(res.address.substr(0, SEED_LENGTH)));
+    }).then(res => setFaucetAddr(res.address));
 
     addAccountEventHandlers(account);
     return () => {
@@ -87,9 +106,8 @@ export default function Account({ history }) {
       <div>
         {`My seed: ${seed}`}
       </div>
-      <div>
-        {`My balance: ${myBalance}`}
-      </div>
+      <div>{`My Available Balance: ${availableBalance}`}</div>
+      <div>{`My Total Balance: ${totalBalance}`}</div>
       <div>
         {`Use this address to request for devnet tokens: ${faucetAddr}`}
       </div>

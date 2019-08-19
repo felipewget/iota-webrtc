@@ -40,7 +40,6 @@ export default class Communication extends Events {
   peerList = {};
   monitorInterval = null;
   oldTransactions = {};
-  requestList = {};
 
   startMonitoring = async () => {
     clearInterval(this.monitorInterval);
