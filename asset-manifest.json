@@ -1,14 +1,14 @@
 {
   "files": {
     "main.css": "/iota-webrtc/static/css/main.cad72491.chunk.css",
-    "main.js": "/iota-webrtc/static/js/main.e0119483.chunk.js",
-    "main.js.map": "/iota-webrtc/static/js/main.e0119483.chunk.js.map",
+    "main.js": "/iota-webrtc/static/js/main.823b3968.chunk.js",
+    "main.js.map": "/iota-webrtc/static/js/main.823b3968.chunk.js.map",
     "runtime~main.js": "/iota-webrtc/static/js/runtime~main.92e6413a.js",
     "runtime~main.js.map": "/iota-webrtc/static/js/runtime~main.92e6413a.js.map",
-    "static/js/2.cd9fc0ff.chunk.js": "/iota-webrtc/static/js/2.cd9fc0ff.chunk.js",
-    "static/js/2.cd9fc0ff.chunk.js.map": "/iota-webrtc/static/js/2.cd9fc0ff.chunk.js.map",
+    "static/js/2.4f97e789.chunk.js": "/iota-webrtc/static/js/2.4f97e789.chunk.js",
+    "static/js/2.4f97e789.chunk.js.map": "/iota-webrtc/static/js/2.4f97e789.chunk.js.map",
     "index.html": "/iota-webrtc/index.html",
-    "precache-manifest.2cda0b68fdad9092103903e8df4af752.js": "/iota-webrtc/precache-manifest.2cda0b68fdad9092103903e8df4af752.js",
+    "precache-manifest.f84cc3a2904945ed6b33be7bd365a951.js": "/iota-webrtc/precache-manifest.f84cc3a2904945ed6b33be7bd365a951.js",
     "service-worker.js": "/iota-webrtc/service-worker.js",
     "static/css/main.cad72491.chunk.css.map": "/iota-webrtc/static/css/main.cad72491.chunk.css.map"
   }
