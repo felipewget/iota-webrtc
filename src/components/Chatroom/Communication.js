@@ -10,12 +10,11 @@ import {
 import { MAX_DEPTH } from 'utils/constants';
 import { debounce } from 'debounce';
 import { composeAPI } from '@iota/core';
-import { serializeCDAMagnet, parseCDAMagnet } from '@iota/cda';
-
+import localPow from 'utils/pow';
 
 export default class Communication extends Events {
   constructor({
-    seed, username, myId, roomId, minWeight, iceServers, interval, provider, account,
+    seed, username, myId, roomId, minWeight, iceServers, interval, provider,
   }) {
     super();
     this.seed = seed;
@@ -24,10 +23,17 @@ export default class Communication extends Events {
     // this.myId = myId;
     this.roomId = roomId;
     this.minWeight = minWeight;
-    this.interval = interval;
+    this.monitorInterval = interval;
     this.config = { iceServers };
-    this.iota = composeAPI({ provider });
-    this.account = account;
+    this.API = composeAPI({
+      provider,
+      attachToTangle: localPow,
+    });
+    this.API.getAccountData(seed, { security: 2 })
+      .then(res => this.emit('refreshAccount', res));
+
+    this.accountInterval = setInterval(() => this.API.getAccountData(seed, { security: 2 })
+      .then(res => this.emit('refreshAccount', res)), 20000);
   }
 
   type = {
@@ -37,23 +43,42 @@ export default class Communication extends Events {
     DONATE_ACCEPT: 'DONATE_ACCEPT',
     CHAT_MESSAGE: 'CHAT_MESSAGE',
   }
-  peerList = {};
-  monitorInterval = null;
   oldTransactions = {};
+  peerList = {};
+
+  stopRefreshingAccount = () => clearInterval(this.accountInterval);
 
   startMonitoring = async () => {
-    clearInterval(this.monitorInterval);
     const constraint = { video: true, audio: true };
     this.stream = await getUserMedia(constraint);
     this.currentTimestamp = getCurrentTimestamp();
     try {
       this.broadcastRequest();
-      this.monitorInterval = setInterval(this.monitorRequest, this.interval);
+      this.isMonitoring = true;
+      this.monitorRequest();
     } catch (err) {
-      clearInterval(this.monitorInterval);
+      this.isMonitoring = false;
       console.error(err);
     }
   }
+
+  monitorRequest = async () => {
+    try {
+      const transactions = await this.getNewTransactions();
+      const bundles = this.getBundles(transactions);
+      const signals = this.getSignals(bundles);
+      console.log('New signals from Tangle:');
+      console.log(signals);
+      this.processSignals(signals);
+      if (this.isMonitoring) {
+        setTimeout(this.monitorRequest, this.monitorInterval);
+      }
+    } catch (error) {
+      setTimeout(this.monitorRequest, this.monitorInterval);
+      console.error(error);
+    }
+  }
+
 
   sendMessage(peerId, message) {
     const peer = this.peerList[peerId];
@@ -88,27 +113,13 @@ export default class Communication extends Events {
 
   broadcastTransaction = (data) => {
     const message = prepareData(data, this.roomId);
-    this.iota.prepareTransfers(this.seed, message).then(async (trytes) => {
-      this.iota.sendTrytes(trytes, MAX_DEPTH, this.minWeight);
-    });
-  }
-
-  monitorRequest = async () => {
-    try {
-      const transactions = await this.getNewTransactions();
-      const bundles = this.getBundles(transactions);
-      const signals = this.getSignals(bundles);
-      console.log('New signals from Tangle:');
-      console.log(signals);
-      this.processSignals(signals);
-    } catch (error) {
-      console.error(error);
-    }
+    this.API.prepareTransfers(this.seed, message)
+      .then(trytes => this.API.sendTrytes(trytes, MAX_DEPTH, this.minWeight));
   }
 
   getNewTransactions = async () => {
     const searchValues = { tags: [this.roomId] };
-    const transactions = await this.iota.findTransactionObjects(searchValues);
+    const transactions = await this.API.findTransactionObjects(searchValues);
     return transactions.filter((transaction) => {
       const { timestamp, bundle } = transaction;
       return timestamp > this.currentTimestamp
@@ -241,33 +252,22 @@ export default class Communication extends Events {
           break;
         }
         case this.type.DONATE_OFFER: {
-          const cda = await this.account.generateCDA({
-            timeoutAt: Date.now() + 24 * 60 * 60 * 1000,
-            expectedAmount: 1,
-          });
-          const magnetLink = serializeCDAMagnet(cda);
+          const address = await this.API.getNewAddress(this.seed, { security: 2 });
           const response = {
             type: this.type.DONATE_ACCEPT,
-            data: magnetLink,
+            address,
           };
           peer.send(JSON.stringify(response));
           break;
         }
         case this.type.DONATE_ACCEPT: {
-          const CDAdata = parseCDAMagnet(message.data);
-          const {
-            address, timeoutAt, multiUse, expectedAmount,
-          } = CDAdata;
-          this.account.sendToCDA({
-            address,
-            timeoutAt,
-            multiUse,
-            expectedAmount,
+          const transfers = [{
             value: 1,
-          })
-            .catch((err) => {
-              console.log(err);
-            });
+            address: message.address,
+          }];
+          this.API.prepareTransfers(this.seed, transfers)
+            .then(trytes => this.API.sendTrytes(trytes, MAX_DEPTH, this.minWeight))
+            .catch(err => console.log(err));
           break;
         }
         default:
@@ -311,12 +311,12 @@ export default class Communication extends Events {
   }
 
   stopMonitoring = () => {
-    clearInterval(this.monitorInterval);
+    this.isMonitoring = false;
   }
 
   endMonitoring = () => {
     this.stopStreaming();
-    clearInterval(this.monitorInterval);
+    this.isMonitoring = false;
     for (const id of Object.keys(this.peerList)) {
       this.peerList[id].destroy();
     }

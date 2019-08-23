@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function Peer(props) {
+export default React.memo((props) => {
   const {
     username, id, srcObject, sendDonationOffer,
   } = props;
@@ -36,4 +36,4 @@ export default function Peer(props) {
       </button>
     </div>
   );
-}
+});
